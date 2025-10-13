@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Personal Finance Tracker{% endblock %}
+
+{% block auth_content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="p-4 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+      <i class="fas fa-wallet fa-3x mb-3"></i>
+      <h3>Welcome Back!</h3>
+      <p class="mb-0">Sign in to your Finance Tracker</p>
+    </div>
+    <div class="p-4">
+      <!-- Django messages would go here -->
+      {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message.message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="username" class="form-label">
+            <i class="fas fa-user me-2"></i>Username or Email
+          </label>
+          <input type="text" class="form-control" id="username" name="username" required
+            placeholder="Enter your username or email">
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">
+            <i class="fas fa-lock me-2"></i>Password
+          </label>
+          <input type="password" class="form-control" id="password" name="password" required
+            placeholder="Enter your password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-3">
+          <i class="fas fa-sign-in-alt me-2"></i>Sign In
+        </button>
+      </form>
+
+      <hr class="my-4">
+
+      <div class="text-center">
+        <p class="mb-0">Don't have an account?</p>
+        <a href="{% url 'register' %}" class="btn btn-outline-primary w-100 mt-2">
+          <i class="fas fa-user-plus me-2"></i>Create Account
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

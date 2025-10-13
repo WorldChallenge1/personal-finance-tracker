@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load mathfilters %}
+
+{% block title %}Budgets - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-piggy-bank me-2"></i>Budget Management</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+        <i class="fas fa-plus me-2"></i>Create Budget
+    </button>
+</div>
+
+<!-- Budget Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-primary">${{ total_budget | floatformat:2}}</h4>
+                <p class="text-muted mb-0">Total Budget</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-danger">${{ total_spent | floatformat:2}}</h4>
+                <p class="text-muted mb-0">Total Spent</p>
+            </div>
+        </div>
+    </div>
+    {% if over_budget > 0 %}
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-warning">-${{ over_budget | floatformat:2}}</h4>
+                    <p class="text-muted mb-0">Over Budget</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-info">{{ total_budgets }}</h4>
+                <p class="text-muted mb-0">Active Budgets</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if budgets %}
+<!-- Budget Progress Charts -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Budget vs Spending</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="budgetChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Budget Alerts</h5>
+            </div>
+            <div class="card-body">
+                {% if budget_alerts %}
+                    {% for alert in budget_alerts %}
+                        <div class="alert alert-{{ alert.type }} d-flex align-items-center {% if not forloop.last %}mb-3{% else %}mb-0{% endif %}">
+                            <i class="fas fa-{{ alert.icon }} me-2"></i>
+                            <div>
+                                <strong>{{ alert.name }}</strong> {{ alert.message }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted mb-0">No alerts at this time.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Categories -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Budget Categories</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for budget in budgets %}
+            <div class="col-md-6 mb-4">
+                <div class="card border {% if budget.is_over_budget %}border-danger{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">
+                                <i class="fas fa-{{ budget.icon }} me-2 text-{{ budget.color }}"></i>
+                                {{ budget.name }}
+                            </h6>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Spent: ${{ budget.spent | floatformat:2 }}</span>
+                            <span>Budget: ${{ budget.amount | floatformat:2 }}</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar bg-{{ budget.status_color }}" style="width: {{ budget.percentage_used }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">{{ budget.percentage_used }}% used</small>
+                            {% if budget.is_over_budget %}
+                                <small class="text-danger">${{ budget.remaining|abs|floatformat:2 }} over budget</small>
+                            {% else %}
+                                <small class="text-{{ budget.status_color }}">${{ budget.remaining | floatformat:2 }} remaining</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- No Budgets Message -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-piggy-bank fa-4x text-muted mb-3"></i>
+        <h4>No Budgets Yet</h4>
+        <p class="text-muted mb-4">Create your first budget to start tracking your spending.</p>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
+            <i class="fas fa-plus me-2"></i>Create Your First Budget
+        </button>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Budget Modal -->
+<div class="modal fade" id="addBudgetModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Create New Budget
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="budgetCategory" class="form-label">Category</label>
+                        <select class="form-select" id="budgetCategory" name="category" required>
+                            <option value="">Select category...</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% empty %}
+                                <option value="" disabled>No categories available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="budgetAmount" class="form-label">Budget Amount</label>
+                        <input type="number" class="form-control" id="budgetAmount" name="amount" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="budgetDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="budgetDescription" name="description" rows="3" placeholder="Budget description..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Create Budget
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if budgets %}
+<script>
+    // Budget vs Spending Chart
+    const ctx = document.getElementById('budgetChart').getContext('2d');
+    const budgetChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [{% for budget in budgets %}'{{ budget.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Budget',
+                data: [{% for budget in budgets %}{{ budget.amount }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(52, 152, 219, 0.3)',
+                borderColor: '#3498db',
+                borderWidth: 2
+            }, {
+                label: 'Spent',
+                data: [{% for budget in budgets %}{{ budget.spent }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                backgroundColor: 'rgba(231, 76, 60, 0.3)',
+                borderColor: '#e74c3c',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

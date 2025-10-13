@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-pie me-2"></i>Dashboard</h2>
+    <div>
+        <span class="text-muted me-3">Last updated: {{ last_updated }}</span>
+    </div>
+</div>
+
+<!-- Financial Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card balance-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">Total Balance</h6>
+                    <h3 class="mb-0">${{ total_balance|floatformat:2 }}</h3>
+                </div>
+                <i class="fas fa-wallet fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card income-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">This Month Income</h6>
+                    <h3 class="mb-0">${{ this_month_income|floatformat:2 }}</h3>
+                </div>
+                <i class="fas fa-arrow-up fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card expense-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1 opacity-75">This Month Expenses</h6>
+                    <h3 class="mb-0">${{ this_month_expenses|floatformat:2 }}</h3>
+                </div>
+                <i class="fas fa-arrow-down fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Spending Chart -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Spending Trend (Last 6 Months)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="spendingChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Expense Categories</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Transactions -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Recent Transactions</h5>
+                <a href="{% url 'transactions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in recent_transactions %}
+
+                            <tr>
+                                <td>{{ transaction.date|date:"M d, Y" }}</td>
+                                <td><i class="{{ transaction.category_icon }} me-2 text-muted"></i>{{ transaction.description|truncatechars:20 }}</td>
+                                <td><span class="badge bg-{{ transaction.category_color }}">{{ transaction.category_name }}</span></td>
+                                <td class="text-{% if transaction.type == 'expense' %}danger{% else %}success{% endif %} fw-bold">
+                                    {% if transaction.type == 'expense' %}
+                                        -
+                                    {% endif %}
+                                    ${{ transaction.amount|floatformat:2 }}</td>
+                                <td>
+                            </tr>
+                            {% empty %}
+                            <p class="text-muted">No recent transactions found.</p>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Overview & Goals -->
+    <div class="col-md-4">
+        <!-- Budget Progress -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-piggy-bank me-2"></i>Budget Progress</h5>
+            </div>
+            <div class="card-body">
+                {% for budget in budgets %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small">{{ budget.name }}</span>
+                        <span class="small">${{ budget.spent|floatformat:2 }} / ${{ budget.amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-{{ budget.status_color }}" style="width: {{ budget.percentage_used }}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No budgets found.</p>
+                {% endfor %}
+                <a class="btn btn-sm btn-outline-primary w-100" href="{% url 'budgets' %}">Manage Budgets</a>
+            </div>
+        </div>
+
+        <!-- Savings Goals -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bullseye me-2"></i>Savings Goals</h5>
+            </div>
+            <div class="card-body">
+                {% for goal in goals %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{{ goal.name }}</span>
+                        <span class="text-muted">${{ goal.current_amount|floatformat:2 }} / ${{ goal.target_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-{{ goal.color }}" style="width: {{ goal.percentage_achieved }}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No goals found.</p>
+                {% endfor %}
+                <a class="btn btn-sm btn-outline-primary w-100" href="{% url 'goals' %}">View All Goals</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Spending Trend Chart
+    const ctx1 = document.getElementById('spendingChart').getContext('2d');
+
+    async function fetchSpendingTrendData() {
+        const url = '/dashboard/spending-trend-chart-data/';
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const result = await response.json();
+
+            // Update the chart with the fetched data
+            spendingChart.data.labels = result.labels;
+            spendingChart.data.datasets = result.datasets;
+            spendingChart.update();
+
+            return result;
+        } catch (error) {
+            console.error('Error fetching spending trend data:', error);
+            return null;
+        }
+    }
+
+    const spendingChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    fetchSpendingTrendData();
+
+    // Category Pie Chart
+    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+
+    async function fetchCategoryData() {
+        const url = '/dashboard/category-pie-chart-data/';
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const result = await response.json();
+
+            // Update the chart with the fetched data
+            result.labels.forEach((label) => {
+                categoryChart.data.labels.push(label);
+            })
+            result.datasets[0].data.forEach((data) => {
+                categoryChart.data.datasets[0].data.push(data);
+            })
+            result.datasets[0].backgroundColor.forEach((color) => {
+                categoryChart.data.datasets[0].backgroundColor.push(color);
+            })
+
+            categoryChart.update();
+
+            return result;
+        } catch (error) {
+            console.error('Error fetching category data:', error);
+            return null;
+        }
+    }
+
+    const categoryChart = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+
+    fetchCategoryData();
+</script>
+{% endblock %}

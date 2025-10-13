@@ -1,0 +1,604 @@
+{% extends 'base.html' %}
+
+{% block title %}Transactions - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-exchange-alt me-2"></i>Transactions</h2>
+    <div>
+        <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#importTransactionModal">
+            <i class="fas fa-upload me-2"></i>Import CSV
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+            <i class="fas fa-plus me-2"></i>Add Transaction
+        </button>
+    </div>
+</div>
+
+<!-- Search Filters -->
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-search me-2"></i>Search & Filter Transactions</h6>
+    </div>
+
+    <div class="card-body">
+        <form method="GET" id="searchForm" class="row g-3">
+            <div class="col-md-4">
+                <label for="startDate" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="startDate" name="start_date" 
+                       value="{{ current_filters.start_date|default:'' }}">
+            </div>
+
+            <div class="col-md-4">
+                <label for="endDate" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="endDate" name="end_date" 
+                       value="{{ current_filters.end_date|default:'' }}">
+                <div class="invalid-feedback" id="dateValidationError"></div>
+            </div>
+
+            <div class="col-md-2">
+                <label for="categoryFilter" class="form-label">Category</label>
+                <select class="form-select" id="categoryFilter" name="category">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" 
+                                data-type="{{ category.type }}"
+                                {% if current_filters.category == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="typeFilter" class="form-label">Type</label>
+                <select class="form-select" id="typeFilter" name="type">
+                    <option value="">All Types</option>
+                    <option value="income" {% if current_filters.type == 'income' %}selected{% endif %}>Income</option>
+                    <option value="expense" {% if current_filters.type == 'expense' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search me-1"></i>Search
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="clearFilters">
+                    <i class="fas fa-times me-1"></i>Clear Filters
+                </button>
+                {% if current_filters.start_date or current_filters.end_date or current_filters.category or current_filters.type or current_filters.search %}
+                    <span class="badge bg-info ms-2">
+                        <i class="fas fa-filter me-1"></i>Filters Active
+                    </span>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-success">${{ total_income|floatformat:2 }}</h3>
+                <p class="text-muted mb-0">Total Income</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">${{ total_expenses|floatformat:2 }}</h3>
+                <p class="text-muted mb-0">Total Expenses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">${{ net_income|floatformat:2 }}</h3>
+                <p class="text-muted mb-0">Net Income</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Found Transactions</h5>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="exportButton">
+                <i class="fas fa-download me-1"></i>Export
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table">
+                    <tr>
+                        <th>
+                            <input type="checkbox" class="form-check-input">
+                        </th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input">
+                        </td>
+                        <td>{{ transaction.date|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="{{ transaction.category_icon }} me-2"></i>
+                                <div>
+                                    <small class="text-muted">{{ transaction.description|truncatechars:35 }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-{{ transaction.category_color }}">{{ transaction.category_name }}</span></td>
+                        <td><span class="badge bg-{% if transaction.type == 'expense' %}danger{% else %}success{% endif %}">{% if transaction.type == 'expense' %}Expense{% else %}Income{% endif %}</span></td>
+                        <td class="text-{% if transaction.type == 'expense' %}danger{% else %}success{% endif %} fw-bold">
+                            {% if transaction.type == 'expense' %}
+                                -
+                            {% endif %}
+                            ${{ transaction.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <p class="text-muted">No transactions found.</p>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer border-top">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <!-- Results info -->
+        <div class="mb-2 mb-md-0">
+            {% if page_obj.paginator.count > 0 %}
+                <span class="text-muted">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
+                </span>
+            {% else %}
+                <span class="text-muted">No transactions found</span>
+            {% endif %}
+        </div>
+
+        <!-- Pagination controls -->
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Transaction pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- First page -->
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1" aria-label="First page">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous page">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-left"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-left"></i>
+                            </span>
+                        </li>
+                    {% endif %}
+
+                    <!-- Page numbers -->
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% elif num == 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% if page_obj.number > 4 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% elif num == page_obj.paginator.num_pages %}
+                            {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Next and last page -->
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next page">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last page">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-right"></i>
+                            </span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                <i class="fas fa-angle-double-right"></i>
+                            </span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add New Transaction
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="transactionCategory" class="form-label">Category</label>
+                        <select class="form-select" id="transactionCategory" name="transaction_category" required>
+                            <option value="">Select category...</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% empty %}
+                                <option value="" disabled>No categories available</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionAmount" class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="transactionAmount" name="transaction_amount" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionDescription" class="form-label">Description</label>
+                        <textarea type="text" class="form-control" id="transactionDescription" name="transaction_description" placeholder="Transaction description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transactionDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="transactionDate" name="transaction_date" value="{{ current_date }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importTransactionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>Import Transactions from CSV
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- CSV Format Info -->
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>CSV Format Requirements</h6>
+                    <p class="mb-2">Your CSV file must have the following columns in this exact order:</p>
+                    <code>date,description,type,amount,category_id</code>
+                    <ul class="mt-2 mb-0">
+                        <li><strong>date:</strong> YYYY-MM-DD format (e.g., 2024-12-15)</li>
+                        <li><strong>description:</strong> Transaction description (optional)</li>
+                        <li><strong>type:</strong> Either "income" or "expense"</li>
+                        <li><strong>amount:</strong> Positive number (e.g., 25.50)</li>
+                        <li><strong>category_id:</strong> ID of existing category</li>
+                    </ul>
+                </div>
+
+                <!-- Available Categories -->
+                <div class="alert alert-secondary">
+                    <h6><i class="fas fa-list me-2"></i>Your Available Categories</h6>
+                    <div class="row">
+                        {% for category in categories %}
+                            <div class="col-md-6 mb-1">
+                                <small><strong>ID {{ category.id }}:</strong> {{ category.name }} ({{ category.type }})</small>
+                            </div>
+                        {% empty %}
+                            <div class="col-12">
+                                <small class="text-muted">No categories available. Please create categories first.</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- File Upload Form -->
+                <form id="csvImportForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select CSV File</label>
+                        <input type="file" class="form-control" id="csvFile" name="csv_file" accept=".csv" required>
+                        <div class="form-text">Maximum file size: 5MB</div>
+                    </div>
+                </form>
+
+                <!-- Progress Bar -->
+                <div id="uploadProgress" class="d-none">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p class="text-center mb-0">Processing your file...</p>
+                </div>
+
+                <!-- Results -->
+                <div id="importResults" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importButton">
+                    <i class="fas fa-upload me-2"></i>Import Transactions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search and Filter functionality
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const searchForm = document.getElementById('searchForm');
+    const dateValidationError = document.getElementById('dateValidationError');
+
+    // Date validation
+    function validateDates() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            endDateInput.classList.add('is-invalid');
+            dateValidationError.textContent = 'End date must be after start date';
+            return false;
+        } else {
+            endDateInput.classList.remove('is-invalid');
+            dateValidationError.textContent = '';
+            return true;
+        }
+    }
+
+    // Category and Type mutual exclusion
+    categoryFilter.addEventListener('change', function() {
+        if (this.value) {
+            // If a category is selected, disable type filter and reset its value
+            typeFilter.value = '';
+            typeFilter.disabled = true;
+            typeFilter.classList.add('text-muted');
+
+        } else {
+            // If no category is selected, enable type filter
+            typeFilter.disabled = false;
+            typeFilter.classList.remove('text-muted');
+        }
+    });
+
+    typeFilter.addEventListener('change', function() {
+        if (this.value) {
+            // If a type is selected, disable category filter and reset its value
+            categoryFilter.value = '';
+            categoryFilter.disabled = true;
+            categoryFilter.classList.add('text-muted');
+        } else {
+            // If no type is selected, enable category filter
+            categoryFilter.disabled = false;
+            categoryFilter.classList.remove('text-muted');
+        }
+    });
+
+    // Initialize the mutual exclusion on page load
+    if (categoryFilter.value) {
+        typeFilter.disabled = true;
+        typeFilter.classList.add('text-muted');
+    }
+
+    if (typeFilter.value) {
+        categoryFilter.disabled = true;
+        categoryFilter.classList.add('text-muted');
+    }
+
+    // Date change listeners
+    startDateInput.addEventListener('change', validateDates);
+    endDateInput.addEventListener('change', validateDates);
+
+    // Form submission validation
+    searchForm.addEventListener('submit', function(e) {
+        if (!validateDates()) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Clear filters functionality
+    clearFiltersBtn.addEventListener('click', function() {
+        // Clear all form inputs
+        startDateInput.value = '';
+        endDateInput.value = '';
+        categoryFilter.value = '';
+        typeFilter.value = '';
+
+        // Re-enable both selects
+        categoryFilter.disabled = false;
+        typeFilter.disabled = false;
+        categoryFilter.classList.remove('text-muted');
+        typeFilter.classList.remove('text-muted');
+
+        // Clear validation errors
+        endDateInput.classList.remove('is-invalid');
+        dateValidationError.textContent = '';
+
+        // Submit the form to reload without filters
+        searchForm.submit();
+    });
+
+
+    // Import and Export Button Handlers
+    const importButton = document.getElementById('importButton');
+    const exportButton = document.getElementById('exportButton');
+    const csvFileInput = document.getElementById('csvFile');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const importResults = document.getElementById('importResults');
+    const csvImportForm = document.getElementById('csvImportForm');
+
+    importButton.addEventListener('click', function() {
+        const file = csvFileInput.files[0];
+
+        if (!file) {
+            alert('Please select a CSV file to import.');
+            return;
+        }
+
+        // Show progress bar
+        uploadProgress.classList.remove('d-none');
+        importResults.classList.add('d-none');
+        importButton.disabled = true;
+        importButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('csv_file', file);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+        // Make AJAX request
+        fetch('{% url "import_transactions_csv" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide progress bar
+            uploadProgress.classList.add('d-none');
+            importResults.classList.remove('d-none');
+
+            if (data.success) {
+                importResults.innerHTML = `
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle me-2"></i>Import Successful!</h6>
+                        <p class="mb-0">${data.message}</p>
+                    </div>
+                `;
+
+                // Close modal after 2 seconds and reload page
+                setTimeout(() => {
+                    $('#importTransactionModal').modal('hide');
+                    location.reload();
+                }, 2000);
+            } else {
+                let errorHtml = `
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Import Failed</h6>
+                        <p>${data.message}</p>
+                `;
+
+                if (data.errors && data.errors.length > 0) {
+                    errorHtml += '<ul class="mb-0">';
+                    data.errors.forEach(error => {
+                        errorHtml += `<li>${error}</li>`;
+                    });
+                    errorHtml += '</ul>';
+                }
+
+                errorHtml += '</div>';
+                importResults.innerHTML = errorHtml;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            uploadProgress.classList.add('d-none');
+            importResults.classList.remove('d-none');
+            importResults.innerHTML = `
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+                    <p class="mb-0">An unexpected error occurred while importing the file. Please try again.</p>
+                </div>
+            `;
+        })
+        .finally(() => {
+            // Re-enable button
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-upload me-2"></i>Import Transactions';
+        });
+    });
+
+    exportButton.addEventListener('click', function() {
+        // Build export URL with current filters
+
+        const params = new URLSearchParams();
+
+        if (startDateInput.value) params.append('start_date', startDateInput.value);
+        if (endDateInput.value) params.append('end_date', endDateInput.value);
+        if (categoryFilter.value) params.append('category', categoryFilter.value);
+        if (typeFilter.value) params.append('type', typeFilter.value);
+
+        const exportUrl = '{% url "export_transactions_csv" %}' + (params.toString() ? '?' + params.toString() : '');
+        // Trigger file download
+        window.location.href = exportUrl;
+    });
+
+    // Reset modal when closed
+    document.getElementById('importTransactionModal').addEventListener('hidden.bs.modal', function() {
+        csvFileInput.value = '';
+        uploadProgress.classList.add('d-none');
+        importResults.classList.add('d-none');
+        importButton.disabled = false;
+        importButton.innerHTML = '<i class="fas fa-upload me-2"></i>Import Transactions';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Categories - Personal Finance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tags me-2"></i>Transaction Categories</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+        <i class="fas fa-plus me-2"></i>Add Category
+    </button>
+</div>
+
+<!-- Categories Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-primary">{{ total_categories }}</h4>
+                <p class="text-muted mb-0">Total Categories</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-success">{{ total_expense_categories }}</h4>
+                <p class="text-muted mb-0">Expense Categories</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-info">{{ total_income_categories }}</h4>
+                <p class="text-muted mb-0">Income Categories</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h4 class="text-warning">{{ total_transactions }}</h4>
+                <p class="text-muted mb-0">Total Transactions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Grid -->
+<div class="row">
+    <!-- Expense Categories -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-arrow-down text-danger me-2"></i>Expense Categories</h5>
+            </div>
+            <div class="card-body">
+                {% for category_data in expense_categories_data %}
+                <div class="d-flex align-items-center justify-content-between p-3 border rounded mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="{{ category_data.icon }} fa-2x text-{{ category_data.color }}"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">{{ category_data.name}}</h6>
+                            <small class="text-muted">{{ category_data.description }}</small>
+                            <div class="mt-1">
+                                <small class="badge bg-primary">{{ category_data.total_transactions }} transactions</small>
+                                <small class="badge bg-secondary ms-1">${{ category_data.total_amount|floatformat:2 }} total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href={% url 'transactions' %}?category={{ category_data.id }}><i class="fas fa-eye me-2"></i>View Transactions</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No expense categories found. Please add a new category.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Categories -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-arrow-up text-success me-2"></i>Income Categories</h5>
+            </div>
+            <div class="card-body">
+                {% for category_data in income_categories_data %}
+                <div class="d-flex align-items-center justify-content-between p-3 border rounded mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="{{ category_data.icon }} fa-2x text-{{ category_data.color }}"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">{{ category_data.name}}</h6>
+                            <small class="text-muted">{{ category_data.description }}</small>
+                            <div class="mt-1">
+                                <small class="badge bg-primary">{{ category_data.total_transactions }} transactions</small>
+                                <small class="badge bg-secondary ms-1">${{ category_data.total_amount|floatformat:2 }} total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item" href={% url 'transactions' %}?category={{ category_data.id }}><i class="fas fa-eye me-2"></i>View Transactions</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-archive me-2"></i>Archive</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No income categories found. Please add a new category.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>Add New Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form  method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="categoryName" name="category_name" placeholder="e.g., Health & Fitness" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryType" class="form-label">Type</label>
+                        <select class="form-select" id="categoryType" name="category_type" required>
+                            <option value="">Select type...</option>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryIcon" class="form-label">Icon</label>
+                        <select class="form-select" id="categoryIcon" name="category_icon">
+                            {% for icon in icon_options %}
+                            <option value="{{ icon.0 }}">{{ icon.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryColor" class="form-label">Color</label>
+                        <select class="form-select" id="categoryColor" name="category_color">
+                            {% for color in color_options %}
+                            <option value="{{ color.0 }}">{{ color.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="categoryDescription" name="category_description" rows="3" placeholder="Describe what this category includes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Create Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
