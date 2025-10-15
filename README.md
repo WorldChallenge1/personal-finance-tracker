@@ -142,6 +142,12 @@ uv run manage.py runserver
 
 Visit `http://127.0.0.1:8000/` in your web browser.
 
-### 6. Access Admin Panel
+### 6. Running docker-compose
+
+```bash
+docker-compose up -d
+```
+
+### 7. Access Admin Panel
 
 Visit `http://127.0.0.1:8000/admin/` and log in with your superuser credentials.
