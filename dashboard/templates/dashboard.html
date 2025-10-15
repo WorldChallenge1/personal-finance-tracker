@@ -69,6 +69,9 @@
             <div class="card-body">
                 <canvas id="categoryChart" height="200"></canvas>
             </div>
+            <div class="card-header">
+                <p id="no-categories" style="display: none;" class="text-muted">No expense categories with transactions found.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -222,7 +225,8 @@
     fetchSpendingTrendData();
 
     // Category Pie Chart
-    const ctx2 = document.getElementById('categoryChart').getContext('2d');
+    const categoryChartElement = document.getElementById('categoryChart')
+    const ctx2 =categoryChartElement.getContext('2d');
 
     async function fetchCategoryData() {
         const url = '/dashboard/category-pie-chart-data/';
@@ -233,6 +237,12 @@
             }
 
             const result = await response.json();
+
+            if (result.labels.length === 0 || result.datasets[0].data.length === 0) {
+                categoryChartElement.style.display = 'none';
+                document.getElementById('no-categories').style.display = 'block';
+                return null;
+            }
 
             // Update the chart with the fetched data
             result.labels.forEach((label) => {
