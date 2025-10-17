@@ -16,7 +16,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-primary">{{ total_categories }}</h4>
-                <p class="text-muted mb-0">Total Categories</p>
+                <p class="text-info-emphasis mb-0">Total Categories</p>
             </div>
         </div>
     </div>
@@ -24,7 +24,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-success">{{ total_expense_categories }}</h4>
-                <p class="text-muted mb-0">Expense Categories</p>
+                <p class="text-info-emphasis mb-0">Expense Categories</p>
             </div>
         </div>
     </div>
@@ -32,7 +32,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-info">{{ total_income_categories }}</h4>
-                <p class="text-muted mb-0">Income Categories</p>
+                <p class="text-info-emphasis mb-0">Income Categories</p>
             </div>
         </div>
     </div>
@@ -40,7 +40,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-warning">{{ total_transactions }}</h4>
-                <p class="text-muted mb-0">Total Transactions</p>
+                <p class="text-info-emphasis mb-0">Total Transactions</p>
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
                         </div>
                         <div>
                             <h6 class="mb-1">{{ category_data.name}}</h6>
-                            <small class="text-muted">{{ category_data.description }}</small>
+                            <small class="text-info-emphasis">{{ category_data.description }}</small>
                             <div class="mt-1">
                                 <small class="badge bg-primary">{{ category_data.total_transactions }} transactions</small>
                                 <small class="badge bg-secondary ms-1">${{ category_data.total_amount|floatformat:2 }} total</small>
@@ -80,7 +80,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-muted">No expense categories found. Please add a new category.</p>
+                <p class="text-info-emphasis">No expense categories found. Please add a new category.</p>
                 {% endfor %}
             </div>
         </div>
@@ -101,7 +101,7 @@
                         </div>
                         <div>
                             <h6 class="mb-1">{{ category_data.name}}</h6>
-                            <small class="text-muted">{{ category_data.description }}</small>
+                            <small class="text-info-emphasis">{{ category_data.description }}</small>
                             <div class="mt-1">
                                 <small class="badge bg-primary">{{ category_data.total_transactions }} transactions</small>
                                 <small class="badge bg-secondary ms-1">${{ category_data.total_amount|floatformat:2 }} total</small>
@@ -121,7 +121,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-muted">No income categories found. Please add a new category.</p>
+                <p class="text-info-emphasis">No income categories found. Please add a new category.</p>
                 {% endfor %}
             </div>
         </div>
