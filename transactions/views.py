@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 class TransactionData:
     def __init__(
         self,
+        id,
         date,
         description,
         type,
@@ -29,7 +30,9 @@ class TransactionData:
         category_name,
         category_icon,
         category_color,
+        category_id,
     ):
+        self.id = id
         self.date = date
         self.description = description
         self.type = type
@@ -37,9 +40,10 @@ class TransactionData:
         self.category_name = category_name
         self.category_icon = category_icon
         self.category_color = category_color
+        self.category_id = category_id
 
     def __str__(self) -> str:
-        return f"TransactionData(date={self.date}, type={self.type}, amount={self.amount}, category_name={self.category_name}, category_icon={self.category_icon}, category_color={self.category_color})"
+        return f"TransactionData(id={self.id}, date={self.date}, type={self.type}, amount={self.amount}, category_name={self.category_name}, category_icon={self.category_icon}, category_color={self.category_color}, category_id={self.category_id})"
 
 
 def get_transactions_data(
@@ -70,6 +74,7 @@ def get_transactions_data(
         Transaction.objects.filter(account=account)
         .select_related("category")
         .values(
+            "id",
             "date",
             "description",
             "type",
@@ -77,6 +82,7 @@ def get_transactions_data(
             "category__name",
             "category__icon",
             "category__color",
+            "category_id",
         )
     )
 
@@ -109,6 +115,7 @@ def get_transactions_data(
 
     transaction_data = [
         TransactionData(
+            id=tx["id"],
             date=tx["date"],
             description=tx["description"],
             type=tx["type"],
@@ -116,6 +123,7 @@ def get_transactions_data(
             category_name=tx["category__name"],
             category_icon=tx["category__icon"],
             category_color=tx["category__color"],
+            category_id=tx["category_id"],
         )
         for tx in page_obj
     ]
@@ -172,6 +180,170 @@ def transactions_view(request: WSGIRequest) -> HttpResponse:
 
     # Get page number from request
     page_number = request.GET.get("page", 1)
+
+    context: dict = {}
+
+    if request.method == "POST":
+        action = request.POST.get("action", "add")
+
+        if action == "delete":
+            # Handle delete transaction
+            transaction_id = request.POST.get("transaction_id")
+            try:
+                transaction = get_object_or_404(
+                    Transaction, id=transaction_id, account=account
+                )
+                transaction.delete()
+
+                # Recalculate account balance
+                account.recalculate_balance()
+
+                context["messages"] = [
+                    {
+                        "message": "Transaction deleted successfully.",
+                        "tags": "success",
+                    }
+                ]
+            except Transaction.DoesNotExist:
+                context["messages"] = [
+                    {
+                        "message": "Transaction not found or you don't have permission to delete it.",
+                        "tags": "danger",
+                    }
+                ]
+            except Exception as e:
+                logger.error(f"Error deleting transaction: {e}")
+                context["messages"] = [
+                    {
+                        "message": "An error occurred while deleting the transaction.",
+                        "tags": "danger",
+                    }
+                ]
+
+        elif action == "edit":
+            # Handle edit transaction
+            transaction_id = request.POST.get("transaction_id")
+            transaction_amount = request.POST.get("transaction_amount", "")
+            transaction_description = request.POST.get("transaction_description", "")
+            transaction_category = request.POST.get("transaction_category", "")
+            transaction_date = request.POST.get("transaction_date", "")
+
+            required_fields = [
+                transaction_amount,
+                transaction_category,
+                transaction_date,
+                transaction_id,
+            ]
+
+            if any(not field for field in required_fields):
+                context["messages"] = [
+                    {
+                        "message": "All fields are required.",
+                        "tags": "danger",
+                    }
+                ]
+            else:
+                try:
+                    transaction = get_object_or_404(
+                        Transaction, id=transaction_id, account=account
+                    )
+                    category = get_object_or_404(Category, id=transaction_category)
+
+                    # Update transaction
+                    transaction.type = category.type
+                    transaction.amount = transaction_amount
+                    transaction.description = transaction_description
+                    transaction.category = category
+                    transaction.date = transaction_date
+                    transaction.save()
+
+                    # Recalculate account balance
+                    account.recalculate_balance()
+
+                    context["messages"] = [
+                        {
+                            "message": "Transaction updated successfully.",
+                            "tags": "success",
+                        }
+                    ]
+                except (Category.DoesNotExist, Transaction.DoesNotExist) as e:
+                    logger.error(f"Error: Category or Transaction does not exist. {e}")
+                    context["messages"] = [
+                        {
+                            "message": "Selected category or transaction does not exist.",
+                            "tags": "danger",
+                        }
+                    ]
+                except Exception as e:
+                    logger.error(f"Error updating transaction: {e}")
+                    context["messages"] = [
+                        {
+                            "message": "An error occurred while updating the transaction.",
+                            "tags": "danger",
+                        }
+                    ]
+
+        else:  # Default to add transaction
+            transaction_amount = request.POST.get("transaction_amount", "")
+            transaction_description = request.POST.get("transaction_description", "")
+            transaction_category = request.POST.get("transaction_category", "")
+            transaction_date = request.POST.get("transaction_date", "")
+
+            required_fields = [
+                transaction_amount,
+                transaction_category,
+                transaction_date,
+            ]
+
+            if any(not field for field in required_fields):
+                context["messages"] = [
+                    {
+                        "message": "All fields are required.",
+                        "tags": "danger",
+                    }
+                ]
+            else:
+                try:
+                    category = get_object_or_404(Category, id=transaction_category)
+
+                    # create and save the new transaction
+                    transaction = Transaction(
+                        type=category.type,
+                        amount=transaction_amount,
+                        description=transaction_description,
+                        category=category,
+                        date=transaction_date,
+                        account=account,
+                    )
+
+                    transaction.save()
+
+                    # Recalculate account balance
+                    account.recalculate_balance()
+
+                    context["messages"] = [
+                        {
+                            "message": "Transaction added successfully.",
+                            "tags": "success",
+                        }
+                    ]
+                except Category.DoesNotExist as e:
+                    logger.error("Error: Category does not exist.", e)
+                    context["messages"] = [
+                        {
+                            "message": "Selected category does not exist.",
+                            "tags": "danger",
+                        }
+                    ]
+                except Exception as e:
+                    logger.error(f"Error saving transaction: {e}")
+                    context["messages"] = [
+                        {
+                            "message": "An error occurred while adding the transaction.",
+                            "tags": "danger",
+                        }
+                    ]
+
     # Get paginated transactions
     transactions, page_obj, total_income, total_expenses = get_transactions_data(
         account,
@@ -184,80 +356,19 @@ def transactions_view(request: WSGIRequest) -> HttpResponse:
     )
     net_income = total_income - total_expenses
 
-    context: dict = {
-        "current_date": timezone.now().date().isoformat(),
-        "categories": categories,
-        "total_expenses": total_expenses,
-        "total_income": total_income,
-        "net_income": net_income,
-        "transactions": transactions,
-        "page_obj": page_obj,
-        "current_filters": {
-            "start_date": start_date,
-            "end_date": end_date,
-            "category": category_id,
-            "type": transaction_type,
-        },
+    context["current_date"] = timezone.now().date().isoformat()
+    context["categories"] = categories
+    context["total_expenses"] = total_expenses
+    context["total_income"] = total_income
+    context["net_income"] = net_income
+    context["transactions"] = transactions
+    context["page_obj"] = page_obj
+    context["current_filters"] = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "category": category_id,
+        "type": transaction_type,
     }
-
-    if request.method == "POST":
-        transaction_amount = request.POST.get("transaction_amount", "")
-        transaction_description = request.POST.get("transaction_description", "")
-        transaction_category = request.POST.get("transaction_category", "")
-        transaction_date = request.POST.get("transaction_date", "")
-
-        required_fields = [
-            transaction_amount,
-            transaction_category,
-            transaction_date,
-        ]
-
-        if any(not field for field in required_fields):
-            context["messages"] = [
-                {
-                    "message": "All fields are required.",
-                    "tags": "danger",
-                }
-            ]
-            return render(request, "transactions.html", context)
-
-        try:
-            category = get_object_or_404(Category, id=transaction_category)
-
-            # create and save the new transaction
-            transaction = Transaction(
-                type=category.type,
-                amount=transaction_amount,
-                description=transaction_description,
-                category=category,
-                date=transaction_date,
-                account=account,
-            )
-
-            transaction.save()
-
-            context["messages"] = [
-                {
-                    "message": "Transaction added successfully.",
-                    "tags": "success",
-                }
-            ]
-        except Category.DoesNotExist as e:
-            logger.error("Error: Category does not exist.", e)
-            context["messages"] = [
-                {
-                    "message": "Selected category does not exist.",
-                    "tags": "danger",
-                }
-            ]
-        except Exception as e:
-            logger.error("Error saving transaction:", e)
-            context["messages"] = [
-                {
-                    "message": "An error occurred while adding the transaction.",
-                    "tags": "danger",
-                }
-            ]
 
     return render(request, "transactions.html", context)
 
