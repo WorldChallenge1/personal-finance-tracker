@@ -9,7 +9,7 @@
         <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#importTransactionModal">
             <i class="fas fa-upload me-2"></i>Import CSV
         </button>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal" data-mode="add">
             <i class="fas fa-plus me-2"></i>Add Transaction
         </button>
     </div>
@@ -128,6 +128,7 @@
                         <th>Category</th>
                         <th>Type</th>
                         <th>Amount</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -152,130 +153,157 @@
                                 -
                             {% endif %}
                             ${{ transaction.amount|floatformat:2 }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary edit-transaction-btn" 
+                                        title="Edit"
+                                        data-transaction-id="{{ transaction.id }}"
+                                        data-transaction-date="{{ transaction.date|date:'Y-m-d' }}"
+                                        data-transaction-description="{{ transaction.description }}"
+                                        data-transaction-category="{{ transaction.category_id }}"
+                                        data-transaction-amount="{{ transaction.amount }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-transaction-btn" 
+                                        title="Delete"
+                                        data-transaction-id="{{ transaction.id }}"
+                                        data-transaction-description="{{ transaction.description }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
-                    <p class="text-muted">No transactions found.</p>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-exchange-alt fa-2x mb-3"></i><br>
+                            No transactions found.
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
     <div class="card-footer border-top">
-    <div class="d-flex justify-content-between align-items-center flex-wrap">
-        <!-- Results info -->
-        <div class="mb-2 mb-md-0">
-            {% if page_obj.paginator.count > 0 %}
-                <span class="text-muted">
-                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
-                </span>
-            {% else %}
-                <span class="text-muted">No transactions found</span>
-            {% endif %}
-        </div>
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <!-- Results info -->
+            <div class="mb-2 mb-md-0">
+                {% if page_obj.paginator.count > 0 %}
+                    <span class="text-muted">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
+                    </span>
+                {% else %}
+                    <span class="text-muted">No transactions found</span>
+                {% endif %}
+            </div>
 
-        <!-- Pagination controls -->
-        {% if page_obj.paginator.num_pages > 1 %}
-            <nav aria-label="Transaction pagination">
-                <ul class="pagination pagination-sm mb-0">
-                    <!-- First page -->
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1" aria-label="First page">
-                                <i class="fas fa-angle-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous page">
-                                <i class="fas fa-angle-left"></i>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">
-                                <i class="fas fa-angle-double-left"></i>
-                            </span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link">
-                                <i class="fas fa-angle-left"></i>
-                            </span>
-                        </li>
-                    {% endif %}
-
-                    <!-- Page numbers -->
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                            <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <!-- Pagination controls -->
+            {% if page_obj.paginator.num_pages > 1 %}
+                <nav aria-label="Transaction pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- First page -->
+                        {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                <a class="page-link" href="?page=1" aria-label="First page">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
                             </li>
-                        {% elif num == 1 %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous page">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
                             </li>
-                            {% if page_obj.number > 4 %}
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                            {% endif %}
-                        {% elif num == page_obj.paginator.num_pages %}
-                            {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                            {% endif %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-angle-left"></i>
+                                </span>
                             </li>
                         {% endif %}
-                    {% endfor %}
 
-                    <!-- Next and last page -->
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next page">
-                                <i class="fas fa-angle-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last page">
-                                <i class="fas fa-angle-double-right"></i>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">
-                                <i class="fas fa-angle-right"></i>
-                            </span>
-                        </li>
-                        <li class="page-item disabled">
-                            <span class="page-link">
-                                <i class="fas fa-angle-double-right"></i>
-                            </span>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        {% endif %}
+                        <!-- Page numbers -->
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% elif num == 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% if page_obj.number > 4 %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% elif num == page_obj.paginator.num_pages %}
+                                {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Next and last page -->
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next page">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last page">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-angle-right"></i>
+                                </span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
     </div>
 </div>
-</div>
 
-<!-- Add Transaction Modal -->
-<div class="modal fade" id="addTransactionModal" tabindex="-1">
+<!-- Transaction Modal (Add/Edit) -->
+<div class="modal fade" id="transactionModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
+                <h5 class="modal-title" id="transactionModalTitle">
                     <i class="fas fa-plus me-2"></i>Add New Transaction
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="">
+            <form method="POST" action="" id="transactionForm">
                 {% csrf_token %}
+                <input type="hidden" name="transaction_id" id="transactionId">
+                <input type="hidden" name="action" id="transactionAction" value="add">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="transactionCategory" class="form-label">Category</label>
@@ -294,7 +322,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="transactionDescription" class="form-label">Description</label>
-                        <textarea type="text" class="form-control" id="transactionDescription" name="transaction_description" placeholder="Transaction description" rows="3"></textarea>
+                        <textarea class="form-control" id="transactionDescription" name="transaction_description" placeholder="Transaction description" rows="3"></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="transactionDate" class="form-label">Date</label>
@@ -303,11 +331,41 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="transactionSubmitBtn">
                         <i class="fas fa-save me-2"></i>Save Transaction
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteTransactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this transaction?</p>
+                <p class="fw-bold" id="deleteTransactionDescription"></p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="" id="deleteTransactionForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="transaction_id" id="deleteTransactionId">
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Delete Transaction
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -414,13 +472,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Category and Type mutual exclusion
     categoryFilter.addEventListener('change', function() {
         if (this.value) {
-            // If a category is selected, disable type filter and reset its value
             typeFilter.value = '';
             typeFilter.disabled = true;
             typeFilter.classList.add('text-muted');
-
         } else {
-            // If no category is selected, enable type filter
             typeFilter.disabled = false;
             typeFilter.classList.remove('text-muted');
         }
@@ -428,12 +483,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     typeFilter.addEventListener('change', function() {
         if (this.value) {
-            // If a type is selected, disable category filter and reset its value
             categoryFilter.value = '';
             categoryFilter.disabled = true;
             categoryFilter.classList.add('text-muted');
         } else {
-            // If no type is selected, enable category filter
             categoryFilter.disabled = false;
             categoryFilter.classList.remove('text-muted');
         }
@@ -464,26 +517,88 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Clear filters functionality
     clearFiltersBtn.addEventListener('click', function() {
-        // Clear all form inputs
         startDateInput.value = '';
         endDateInput.value = '';
         categoryFilter.value = '';
         typeFilter.value = '';
-
-        // Re-enable both selects
         categoryFilter.disabled = false;
         typeFilter.disabled = false;
         categoryFilter.classList.remove('text-muted');
         typeFilter.classList.remove('text-muted');
-
-        // Clear validation errors
         endDateInput.classList.remove('is-invalid');
         dateValidationError.textContent = '';
-
-        // Submit the form to reload without filters
         searchForm.submit();
     });
 
+    // Edit Transaction functionality
+    const editButtons = document.querySelectorAll('.edit-transaction-btn');
+    const transactionModal = document.getElementById('transactionModal');
+    const transactionModalTitle = document.getElementById('transactionModalTitle');
+    const transactionForm = document.getElementById('transactionForm');
+    const transactionIdInput = document.getElementById('transactionId');
+    const transactionActionInput = document.getElementById('transactionAction');
+    const transactionCategoryInput = document.getElementById('transactionCategory');
+    const transactionAmountInput = document.getElementById('transactionAmount');
+    const transactionDescriptionInput = document.getElementById('transactionDescription');
+    const transactionDateInput = document.getElementById('transactionDate');
+    const transactionSubmitBtn = document.getElementById('transactionSubmitBtn');
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            const transactionDate = this.getAttribute('data-transaction-date');
+            const transactionDescription = this.getAttribute('data-transaction-description');
+            const transactionCategory = this.getAttribute('data-transaction-category');
+            const transactionAmount = this.getAttribute('data-transaction-amount');
+
+            // Populate modal with transaction data
+            transactionIdInput.value = transactionId;
+            transactionActionInput.value = 'edit';
+            transactionDateInput.value = transactionDate;
+            transactionDescriptionInput.value = transactionDescription;
+            transactionCategoryInput.value = transactionCategory;
+            transactionAmountInput.value = transactionAmount;
+
+            // Update modal title and button text
+            transactionModalTitle.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Transaction';
+            transactionSubmitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Transaction';
+
+            // Show modal
+            const modal = new bootstrap.Modal(transactionModal);
+            modal.show();
+        });
+    });
+
+    // Reset modal when closed (for add mode)
+    transactionModal.addEventListener('hidden.bs.modal', function() {
+        transactionIdInput.value = '';
+        transactionActionInput.value = 'add';
+        transactionModalTitle.innerHTML = '<i class="fas fa-plus me-2"></i>Add New Transaction';
+        transactionSubmitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Transaction';
+        transactionForm.reset();
+    });
+
+    // Delete Transaction functionality
+    const deleteButtons = document.querySelectorAll('.delete-transaction-btn');
+    const deleteTransactionModal = document.getElementById('deleteTransactionModal');
+    const deleteTransactionDescription = document.getElementById('deleteTransactionDescription');
+    const deleteTransactionIdInput = document.getElementById('deleteTransactionId');
+    const deleteTransactionForm = document.getElementById('deleteTransactionForm');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            const transactionDescription = this.getAttribute('data-transaction-description');
+
+            // Populate delete confirmation modal
+            deleteTransactionIdInput.value = transactionId;
+            deleteTransactionDescription.textContent = transactionDescription || 'Untitled Transaction';
+
+            // Show modal
+            const modal = new bootstrap.Modal(deleteTransactionModal);
+            modal.show();
+        });
+    });
 
     // Import and Export Button Handlers
     const importButton = document.getElementById('importButton');
@@ -501,18 +616,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Show progress bar
         uploadProgress.classList.remove('d-none');
         importResults.classList.add('d-none');
         importButton.disabled = true;
         importButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
 
-        // Prepare form data
         const formData = new FormData();
         formData.append('csv_file', file);
         formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-        // Make AJAX request
         fetch('{% url "import_transactions_csv" %}', {
             method: 'POST',
             body: formData,
@@ -522,7 +634,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            // Hide progress bar
             uploadProgress.classList.add('d-none');
             importResults.classList.remove('d-none');
 
@@ -534,7 +645,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
 
-                // Close modal after 2 seconds and reload page
                 setTimeout(() => {
                     $('#importTransactionModal').modal('hide');
                     location.reload();
@@ -570,15 +680,12 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         })
         .finally(() => {
-            // Re-enable button
             importButton.disabled = false;
             importButton.innerHTML = '<i class="fas fa-upload me-2"></i>Import Transactions';
         });
     });
 
     exportButton.addEventListener('click', function() {
-        // Build export URL with current filters
-
         const params = new URLSearchParams();
 
         if (startDateInput.value) params.append('start_date', startDateInput.value);
@@ -587,11 +694,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeFilter.value) params.append('type', typeFilter.value);
 
         const exportUrl = '{% url "export_transactions_csv" %}' + (params.toString() ? '?' + params.toString() : '');
-        // Trigger file download
         window.location.href = exportUrl;
     });
 
-    // Reset modal when closed
+    // Reset import modal when closed
     document.getElementById('importTransactionModal').addEventListener('hidden.bs.modal', function() {
         csvFileInput.value = '';
         uploadProgress.classList.add('d-none');

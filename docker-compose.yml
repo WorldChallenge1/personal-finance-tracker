@@ -1,0 +1,21 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Use your host user's UID/GID to avoid permission issues
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    container_name: finance-tracker
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      # Mount code directory with proper permissions
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+    restart: unless-stopped

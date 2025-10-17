@@ -13,7 +13,8 @@
             ],
             "django": true,
             "autoStartBrowser": true,
-            "program": "${workspaceFolder}/manage.py"
+            "program": "${workspaceFolder}/manage.py",
+            "python": "${workspaceFolder}/.venv/bin/python",
         }
     ]
 }

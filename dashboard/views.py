@@ -41,6 +41,7 @@ def get_recent_transactions(account, limit=5):
         Transaction.objects.filter(account=account)
         .select_related("category")
         .values(
+            "id",
             "date",
             "description",
             "type",
@@ -48,11 +49,13 @@ def get_recent_transactions(account, limit=5):
             "category__name",
             "category__icon",
             "category__color",
+            "category__id",
         )
         .order_by("-date")[:limit]
     )
     return [
         TransactionData(
+            id=tx["id"],
             date=tx["date"],
             description=tx["description"],
             type=tx["type"],
@@ -60,6 +63,7 @@ def get_recent_transactions(account, limit=5):
             category_name=tx["category__name"],
             category_icon=tx["category__icon"],
             category_color=tx["category__color"],
+            category_id=tx["category__id"],
         )
         for tx in transactions
     ]
