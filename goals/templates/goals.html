@@ -16,7 +16,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-primary">${{ total_goals_amount }}</h4>
-                <p class="text-muted mb-0">Total Goal Amount</p>
+                <p class="text-info-emphasis mb-0">Total Goal Amount</p>
             </div>
         </div>
     </div>
@@ -24,7 +24,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-success">${{ total_saved }}</h4>
-                <p class="text-muted mb-0">Total Saved</p>
+                <p class="text-info-emphasis mb-0">Total Saved</p>
             </div>
         </div>
     </div>
@@ -32,7 +32,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-warning">{{ average_progress }}%</h4>
-                <p class="text-muted mb-0">Average Progress</p>
+                <p class="text-info-emphasis mb-0">Average Progress</p>
             </div>
         </div>
     </div>
@@ -40,7 +40,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-info">{{ total_goals }}</h4>
-                <p class="text-muted mb-0">Active Goals</p>
+                <p class="text-info-emphasis mb-0">Active Goals</p>
             </div>
         </div>
     </div>
@@ -72,7 +72,7 @@
                             <i class="{{ goal_data.icon }} me-2 text-{{ goal_data.color }}"></i>
                             {{ goal_data.name }}
                         </h5>
-                        <p class="text-muted mb-0">{{ goal_data.description }}</p>
+                        <p class="text-info-emphasis mb-0">{{ goal_data.description }}</p>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -86,7 +86,7 @@
 
                 <div class="d-flex justify-content-between mb-2">
                     <span class="fw-bold">$<span id="current-{{ goal_data.id }}">{{ goal_data.current_amount }}</span> of ${{ goal_data.target_amount }}</span>
-                    <span class="text-muted"><span id="percentage-{{ goal_data.id }}">{{ goal_data.percentage_achieved }}</span>% complete</span>
+                    <span class="text-info-emphasis"><span id="percentage-{{ goal_data.id }}">{{ goal_data.percentage_achieved }}</span>% complete</span>
                 </div>
                 <div class="progress mb-3" style="height: 12px;">
                     <div class="progress-bar bg-{{ goal_data.color }}" id="progress-bar-{{ goal_data.id }}" style="width: {{ goal_data.percentage_achieved }}%"></div>
@@ -94,11 +94,11 @@
 
                 <div class="row text-center">
                     <div class="col-6">
-                        <small class="text-muted d-block">Target Date</small>
+                        <small class="text-info-emphasis d-block">Target Date</small>
                         <strong>{{ goal_data.target_date }}</strong>
                     </div>
                     <div class="col-6">
-                        <small class="text-muted d-block">Time Left</small>
+                        <small class="text-info-emphasis d-block">Time Left</small>
                         <strong>{{ goal_data.time_left }} days</strong>
                     </div>
                 </div>
@@ -157,7 +157,7 @@
         </div>
     </div>
     {% empty %}
-    <p class="text-muted">No goals found. Please add a new goal.</p>
+    <p class="text-info-emphasis">No goals found. Please add a new goal.</p>
     {% endfor %}
 </div>
 

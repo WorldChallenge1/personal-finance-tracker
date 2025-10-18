@@ -17,7 +17,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-primary">${{ total_budget | floatformat:2}}</h4>
-                <p class="text-muted mb-0">Total Budget</p>
+                <p class="text-info-emphasis mb-0">Total Budget</p>
             </div>
         </div>
     </div>
@@ -25,7 +25,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-danger">${{ total_spent | floatformat:2}}</h4>
-                <p class="text-muted mb-0">Total Spent</p>
+                <p class="text-info-emphasis mb-0">Total Spent</p>
             </div>
         </div>
     </div>
@@ -34,7 +34,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h4 class="text-warning">-${{ over_budget | floatformat:2}}</h4>
-                    <p class="text-muted mb-0">Over Budget</p>
+                    <p class="text-info-emphasis mb-0">Over Budget</p>
                 </div>
             </div>
         </div>
@@ -43,7 +43,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h4 class="text-info">{{ total_budgets }}</h4>
-                <p class="text-muted mb-0">Active Budgets</p>
+                <p class="text-info-emphasis mb-0">Active Budgets</p>
             </div>
         </div>
     </div>
@@ -78,7 +78,7 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted mb-0">No alerts at this time.</p>
+                    <p class="text-info-emphasis mb-0">No alerts at this time.</p>
                 {% endif %}
             </div>
         </div>
@@ -110,7 +110,7 @@
                             <div class="progress-bar bg-{{ budget.status_color }}" style="width: {{ budget.percentage_used }}%"></div>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <small class="text-muted">{{ budget.percentage_used }}% used</small>
+                            <small class="text-info-emphasis">{{ budget.percentage_used }}% used</small>
                             {% if budget.is_over_budget %}
                                 <small class="text-danger">${{ budget.remaining|abs|floatformat:2 }} over budget</small>
                             {% else %}
@@ -128,9 +128,9 @@
 <!-- No Budgets Message -->
 <div class="card">
     <div class="card-body text-center py-5">
-        <i class="fas fa-piggy-bank fa-4x text-muted mb-3"></i>
+        <i class="fas fa-piggy-bank fa-4x text-info-emphasis mb-3"></i>
         <h4>No Budgets Yet</h4>
-        <p class="text-muted mb-4">Create your first budget to start tracking your spending.</p>
+        <p class="text-info-emphasis mb-4">Create your first budget to start tracking your spending.</p>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBudgetModal">
             <i class="fas fa-plus me-2"></i>Create Your First Budget
         </button>

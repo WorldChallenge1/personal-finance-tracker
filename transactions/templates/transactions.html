@@ -83,7 +83,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-success">${{ total_income|floatformat:2 }}</h3>
-                <p class="text-muted mb-0">Total Income</p>
+                <p class="text-info-emphasis mb-0">Total Income</p>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-danger">${{ total_expenses|floatformat:2 }}</h3>
-                <p class="text-muted mb-0">Total Expenses</p>
+                <p class="text-info-emphasis mb-0">Total Expenses</p>
             </div>
         </div>
     </div>
@@ -99,7 +99,7 @@
         <div class="card text-center">
             <div class="card-body">
                 <h3 class="text-primary">${{ net_income|floatformat:2 }}</h3>
-                <p class="text-muted mb-0">Net Income</p>
+                <p class="text-info-emphasis mb-0">Net Income</p>
             </div>
         </div>
     </div>
@@ -142,7 +142,7 @@
                             <div class="d-flex align-items-center">
                                 <i class="{{ transaction.category_icon }} me-2"></i>
                                 <div>
-                                    <small class="text-muted">{{ transaction.description|truncatechars:35 }}</small>
+                                    <small class="text-info-emphasis">{{ transaction.description|truncatechars:35 }}</small>
                                 </div>
                             </div>
                         </td>
@@ -175,7 +175,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="7" class="text-center text-info-emphasis py-4">
                             <i class="fas fa-exchange-alt fa-2x mb-3"></i><br>
                             No transactions found.
                         </td>
@@ -191,11 +191,11 @@
             <!-- Results info -->
             <div class="mb-2 mb-md-0">
                 {% if page_obj.paginator.count > 0 %}
-                    <span class="text-muted">
+                    <span class="text-info-emphasis">
                         Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
                     </span>
                 {% else %}
-                    <span class="text-muted">No transactions found</span>
+                    <span class="text-info-emphasis">No transactions found</span>
                 {% endif %}
             </div>
 
@@ -353,7 +353,7 @@
             <div class="modal-body">
                 <p>Are you sure you want to delete this transaction?</p>
                 <p class="fw-bold" id="deleteTransactionDescription"></p>
-                <p class="text-muted">This action cannot be undone.</p>
+                <p class="text-info-emphasis">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -405,7 +405,7 @@
                             </div>
                         {% empty %}
                             <div class="col-12">
-                                <small class="text-muted">No categories available. Please create categories first.</small>
+                                <small class="text-info-emphasis">No categories available. Please create categories first.</small>
                             </div>
                         {% endfor %}
                     </div>
@@ -474,10 +474,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.value) {
             typeFilter.value = '';
             typeFilter.disabled = true;
-            typeFilter.classList.add('text-muted');
+            typeFilter.classList.add('text-info-emphasis');
         } else {
             typeFilter.disabled = false;
-            typeFilter.classList.remove('text-muted');
+            typeFilter.classList.remove('text-info-emphasis');
         }
     });
 
@@ -485,22 +485,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.value) {
             categoryFilter.value = '';
             categoryFilter.disabled = true;
-            categoryFilter.classList.add('text-muted');
+            categoryFilter.classList.add('text-info-emphasis');
         } else {
             categoryFilter.disabled = false;
-            categoryFilter.classList.remove('text-muted');
+            categoryFilter.classList.remove('text-info-emphasis');
         }
     });
 
     // Initialize the mutual exclusion on page load
     if (categoryFilter.value) {
         typeFilter.disabled = true;
-        typeFilter.classList.add('text-muted');
+        typeFilter.classList.add('text-info-emphasis');
     }
 
     if (typeFilter.value) {
         categoryFilter.disabled = true;
-        categoryFilter.classList.add('text-muted');
+        categoryFilter.classList.add('text-info-emphasis');
     }
 
     // Date change listeners
@@ -523,8 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
         typeFilter.value = '';
         categoryFilter.disabled = false;
         typeFilter.disabled = false;
-        categoryFilter.classList.remove('text-muted');
-        typeFilter.classList.remove('text-muted');
+        categoryFilter.classList.remove('text-info-emphasis');
+        typeFilter.classList.remove('text-info-emphasis');
         endDateInput.classList.remove('is-invalid');
         dateValidationError.textContent = '';
         searchForm.submit();

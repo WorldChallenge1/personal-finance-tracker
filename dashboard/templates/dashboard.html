@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-chart-pie me-2"></i>Dashboard</h2>
     <div>
-        <span class="text-muted me-3">Last updated: {{ last_updated }}</span>
+        <span class="text-info-emphasis me-3">Last updated: {{ last_updated }}</span>
     </div>
 </div>
 
@@ -70,7 +70,7 @@
                 <canvas id="categoryChart" height="200"></canvas>
             </div>
             <div class="card-header">
-                <p id="no-categories" style="display: none;" class="text-muted">No expense categories with transactions found.</p>
+                <p id="no-categories" style="display: none;" class="text-info-emphasis">No expense categories with transactions found.</p>
             </div>
         </div>
     </div>
@@ -100,7 +100,7 @@
 
                             <tr>
                                 <td>{{ transaction.date|date:"M d, Y" }}</td>
-                                <td><i class="{{ transaction.category_icon }} me-2 text-muted"></i>{{ transaction.description|truncatechars:20 }}</td>
+                                <td><i class="{{ transaction.category_icon }} me-2 text-info-emphasis"></i>{{ transaction.description|truncatechars:20 }}</td>
                                 <td><span class="badge bg-{{ transaction.category_color }}">{{ transaction.category_name }}</span></td>
                                 <td class="text-{% if transaction.type == 'expense' %}danger{% else %}success{% endif %} fw-bold">
                                     {% if transaction.type == 'expense' %}
@@ -110,7 +110,7 @@
                                 <td>
                             </tr>
                             {% empty %}
-                            <p class="text-muted">No recent transactions found.</p>
+                            <p class="text-info-emphasis">No recent transactions found.</p>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -138,7 +138,7 @@
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-muted">No budgets found.</p>
+                <p class="text-info-emphasis">No budgets found.</p>
                 {% endfor %}
                 <a class="btn btn-sm btn-outline-primary w-100" href="{% url 'budgets' %}">Manage Budgets</a>
             </div>
@@ -154,14 +154,14 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="fw-bold">{{ goal.name }}</span>
-                        <span class="text-muted">${{ goal.current_amount|floatformat:2 }} / ${{ goal.target_amount|floatformat:2 }}</span>
+                        <span class="text-info-emphasis">${{ goal.current_amount|floatformat:2 }} / ${{ goal.target_amount|floatformat:2 }}</span>
                     </div>
                     <div class="progress" style="height: 10px;">
                         <div class="progress-bar bg-{{ goal.color }}" style="width: {{ goal.percentage_achieved }}%"></div>
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-muted">No goals found.</p>
+                <p class="text-info-emphasis">No goals found.</p>
                 {% endfor %}
                 <a class="btn btn-sm btn-outline-primary w-100" href="{% url 'goals' %}">View All Goals</a>
             </div>
