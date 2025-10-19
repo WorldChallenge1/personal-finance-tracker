@@ -7,7 +7,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
-from budgets.views import get_butgets_data
+from budgets.views import get_budgets_data
 from core.constants import COLOR_MAP
 from core.models import Account
 from core.utils import get_current_month_date_range
@@ -106,7 +106,7 @@ def dashboard_view(request: WSGIRequest) -> HttpResponse:
         account, *get_current_month_date_range()
     )
     recent_transactions = get_recent_transactions(account)
-    budgets = get_butgets_data(request.user)
+    budgets = get_budgets_data(request.user)
     budgets.sort(key=lambda x: x.percentage_used, reverse=True)
     budgets = budgets[:3]
     goals = get_goals_data(request.user)
