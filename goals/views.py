@@ -155,6 +155,151 @@ def get_goals_chart_data(user: AbstractBaseUser | AnonymousUser) -> dict:
 
 # Create your views here.
 def goals_view(request: WSGIRequest) -> HttpResponse:
+    context: dict = {
+        "color_options": COLOR_OPTIONS,
+        "icon_options": GOALS_ICON_OPTIONS,
+    }
+
+    if request.method == "POST":
+        action = request.POST.get("action", "add")
+
+        if action == "delete":
+            # Handle delete goal
+            goal_id = request.POST.get("goal_id")
+            try:
+                goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+                goal.delete()
+                context["messages"] = [
+                    {
+                        "message": "Goal deleted successfully.",
+                        "tags": "success",
+                    }
+                ]
+            except Goal.DoesNotExist:
+                context["messages"] = [
+                    {
+                        "message": "Goal not found or you don't have permission to delete it.",
+                        "tags": "danger",
+                    }
+                ]
+            except Exception as e:
+                logger.error(f"Error deleting goal: {e}")
+                context["messages"] = [
+                    {
+                        "message": "An error occurred while deleting the goal.",
+                        "tags": "danger",
+                    }
+                ]
+
+        elif action == "edit":
+            # Handle edit goal
+            goal_id = request.POST.get("goal_id")
+            goal_name = request.POST.get("goal_name", "")
+            goal_description = request.POST.get("goal_description", "")
+            goal_amount = request.POST.get("goal_amount", "")
+            goal_current_amount = request.POST.get("goal_current_amount", "")
+            goal_target_date = request.POST.get("goal_target_date", "")
+            goal_icon = request.POST.get("goal_icon", "")
+            goal_color = request.POST.get("goal_color", "")
+
+            required_fields = [goal_name, goal_amount, goal_target_date]
+
+            if any(not field for field in required_fields):
+                context["messages"] = [
+                    {
+                        "message": "Goal name, target amount, and target date are required.",
+                        "tags": "danger",
+                    }
+                ]
+            else:
+                try:
+                    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+
+                    # Update goal
+                    goal.name = goal_name
+                    goal.description = goal_description
+                    goal.target_amount = goal_amount
+                    if goal_current_amount:
+                        goal.current_amount = goal_current_amount
+                    goal.target_date = goal_target_date
+                    goal.icon = goal_icon
+                    goal.color = goal_color
+                    goal.save()
+
+                    context["messages"] = [
+                        {
+                            "message": "Goal updated successfully.",
+                            "tags": "success",
+                        }
+                    ]
+                except Goal.DoesNotExist:
+                    context["messages"] = [
+                        {
+                            "message": "Goal not found or you don't have permission to edit it.",
+                            "tags": "danger",
+                        }
+                    ]
+                except Exception as e:
+                    logger.error(f"Error updating goal: {e}")
+                    context["messages"] = [
+                        {
+                            "message": "An error occurred while updating the goal.",
+                            "tags": "danger",
+                        }
+                    ]
+
+        else:  # Default to add goal
+            goal_name = request.POST.get("goal_name", "")
+            goal_description = request.POST.get("goal_description", "")
+            goal_amount = request.POST.get("goal_amount", "")
+            goal_current_amount = request.POST.get("goal_current_amount", "0")
+            goal_target_date = request.POST.get("goal_target_date", "")
+            goal_icon = request.POST.get("goal_icon", "")
+            goal_color = request.POST.get("goal_color", "")
+
+            required_fields = [goal_name, goal_amount, goal_target_date]
+
+            if any(not field for field in required_fields):
+                context["messages"] = [
+                    {
+                        "message": "Please fill in all required fields.",
+                        "tags": "danger",
+                    }
+                ]
+            else:
+                if goal_current_amount == "":
+                    goal_current_amount = 0
+
+                # Create and save the new goal
+                goal = Goal(
+                    name=goal_name,
+                    description=goal_description,
+                    target_amount=goal_amount,
+                    current_amount=goal_current_amount,
+                    target_date=goal_target_date,
+                    icon=goal_icon,
+                    color=goal_color,
+                    user=request.user,
+                )
+
+                try:
+                    goal.save()
+                    context["messages"] = [
+                        {
+                            "message": "Goal created successfully.",
+                            "tags": "success",
+                        }
+                    ]
+                except Exception as e:
+                    logger.error(f"Error creating goal: {e}")
+                    context["messages"] = [
+                        {
+                            "message": "An error occurred while creating the goal.",
+                            "tags": "danger",
+                        }
+                    ]
+
+    # Get goals data
     goals_data = get_goals_data(request.user)
     total_goals_amount = sum([goal.target_amount for goal in goals_data])
     total_saved = sum([goal.current_amount for goal in goals_data])
@@ -166,85 +311,16 @@ def goals_view(request: WSGIRequest) -> HttpResponse:
     total_goals = len(goals_data)
     chart_data = get_goals_chart_data(request.user)
 
-    context = {
-        "color_options": COLOR_OPTIONS,
-        "icon_options": GOALS_ICON_OPTIONS,
-        "goals_data": goals_data,
-        "total_goals_amount": total_goals_amount,
-        "total_saved": total_saved,
-        "average_progress": average_progress,
-        "total_goals": total_goals,
-        "chart_data": chart_data,
-    }
-
-    if request.method == "POST":
-        print("Received POST request with data:", request.POST)
-        goal_name = request.POST.get("goal_name", "")
-        goal_description = request.POST.get("goal_description", "")
-        goal_amount = request.POST.get("goal_amount", "")
-        goal_current_amount = request.POST.get("goal_current_amount", "0")
-        goal_target_date = request.POST.get("goal_target_date", "")
-        goal_icon = request.POST.get("goal_icon", "")
-        goal_color = request.POST.get("goal_color", "")
-        _ = request.POST.get("goal_notifications") == "on"
-
-        required_fields = [goal_name, goal_amount, goal_target_date]
-
-        if any(not field for field in required_fields):
-            return render(
-                request,
-                "goals.html",
-                {
-                    "messages": [
-                        {
-                            "message": "Please fill in all required fields.",
-                            "tags": "danger",
-                        }
-                    ]
-                },
-            )
-
-        if goal_current_amount == "":
-            goal_current_amount = 0
-
-        # Create and save the new goal
-        goal = Goal(
-            name=goal_name,
-            description=goal_description,
-            target_amount=goal_amount,
-            current_amount=goal_current_amount,
-            target_date=goal_target_date,
-            icon=goal_icon,
-            color=goal_color,
-            user=request.user,
-        )
-
-        try:
-            goal.save()
-            context["messages"] = [
-                {
-                    "message": "Goal created successfully.",
-                    "tags": "success",
-                }
-            ]
-            return render(
-                request,
-                "goals.html",
-                context,
-            )
-        except Exception as e:
-            logger.error("Error creating goal:", e)
-            context["messages"] = [
-                {
-                    "message": "An error occurred while creating the goal.",
-                    "tags": "danger",
-                }
-            ]
-            return render(
-                request,
-                "goals.html",
-                context,
-            )
+    context.update(
+        {
+            "goals_data": goals_data,
+            "total_goals_amount": total_goals_amount,
+            "total_saved": total_saved,
+            "average_progress": average_progress,
+            "total_goals": total_goals,
+            "chart_data": chart_data,
+        }
+    )
 
     return render(
         request,
